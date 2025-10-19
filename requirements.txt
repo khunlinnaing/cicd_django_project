@@ -1,2 +1,5 @@
 django
 python-dotenv
+coverage 
+pytest 
+pytest-django
