@@ -1,0 +1,1 @@
+INDEX_URL_NAME = "website:index"

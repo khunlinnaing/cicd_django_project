@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
+from .constants import INDEX_URL_NAME
 from main.models import Post
 from main.forms import PostForm
 
@@ -18,7 +19,7 @@ def get_detail(request, pk):
         return render(request, 'detail.html', {'item': item})
     except Post.DoesNotExist:
         messages.error(request, "Id not found")
-        return redirect('website:index')
+        return redirect(INDEX_URL_NAME)
 
 @csrf_protect
 @require_http_methods(["GET", "POST"])
@@ -28,7 +29,7 @@ def create_post(request):
         if form.is_valid():
             form.save()
             messages.success(request, "successfully")
-            return redirect('website:index')
+            return redirect(INDEX_URL_NAME)
         else:
             messages.error(request, "fail")
             return render(request, 'create_post.html', {'form': form})
@@ -49,14 +50,14 @@ def update_post(request, pk):
         post = Post.objects.get(pk=pk)
     except Post.DoesNotExist:
         messages.error(request, "Id not found")
-        return redirect('website:index')  # redirect instead of render
+        return redirect(INDEX_URL_NAME)  # redirect instead of render
 
     if request.method == "POST":
         form = PostForm(request.POST, instance=post)
         if form.is_valid():
             form.save()
             messages.success(request, "Update successfully")
-            return redirect('website:index')
+            return redirect(INDEX_URL_NAME)
         else:
             messages.error(request, "Update failed. Check the data.")
     else:
