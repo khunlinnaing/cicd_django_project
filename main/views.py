@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from .models import *
 from .forms import *
@@ -18,7 +19,8 @@ def get_detail(request, pk):
     except Post.DoesNotExist:
         messages.error(request, "Id not found")
         return redirect('website:index')
-    
+
+@csrf_protect
 @require_http_methods(["GET", "POST"])
 def create_post(request):
     if request.method == "POST":
@@ -34,6 +36,7 @@ def create_post(request):
         form = PostForm()
         return render(request, 'create_post.html', {'form': form})
 
+@csrf_protect
 @require_http_methods(["GET", "POST"])
 def update_post(request, pk):
     """
