@@ -3,4 +3,4 @@ from main.models import Post
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
-    list_display= ['title', 'content']
+    list_display= ['title', 'content']a
