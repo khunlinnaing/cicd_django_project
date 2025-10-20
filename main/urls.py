@@ -4,7 +4,8 @@ from . import views
 app_name='website'
 urlpatterns = [
     path('', views.index, name='index'),
-    path('create/', views.create_post, name='create-post'),
+    path('getform/', views.get_create_post, name='get-create-post'),
+    path('create/', views.post_create_post, name='post-create-post'),
     path('<int:pk>/post', views.get_detail, name='get-detail'),
     path('<int:pk>/edit', views.update_post, name='update-post'),
 ]

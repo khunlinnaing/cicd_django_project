@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_POST,require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from .constants import INDEX_URL_NAME, CREATE_POST_URL_NAME
+from .constants import INDEX_URL_NAME, CREATE_POST_URL_NAME, CREATE_POST_FORM_URL_NAME
 from main.models import Post
 from main.forms import PostForm
 
@@ -21,22 +21,23 @@ def get_detail(request, pk):
         messages.error(request, "Id not found")
         return redirect(INDEX_URL_NAME)
 
-@csrf_protect
-@require_http_methods(["GET", "POST"])
-def create_post(request):
-    if request.method == "POST":
-        form = PostForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "successfully")
-            return redirect(INDEX_URL_NAME)
-        else:
-            messages.error(request, "fail")
-            return render(request, CREATE_POST_URL_NAME, {'form': form})
-    else:
-        form = PostForm()
-        return render(request, CREATE_POST_URL_NAME, {'form': form})
 
+@require_GET
+def get_create_post(request):
+    form = PostForm()
+    return render(request, CREATE_POST_URL_NAME, {'form': form, 'action': CREATE_POST_FORM_URL_NAME})
+
+@require_POST
+def post_create_post(request):
+    form = PostForm(request.POST)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "successfully")
+        return redirect(INDEX_URL_NAME)
+    else:
+        messages.error(request, "fail")
+        return render(request, CREATE_POST_URL_NAME, {'form': form, 'action': CREATE_POST_FORM_URL_NAME})
+    
 @csrf_protect
 @require_http_methods(["GET", "POST"])
 def update_post(request, pk):

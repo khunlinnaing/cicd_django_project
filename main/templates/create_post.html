@@ -6,7 +6,7 @@
     <title>Testing</title>
 </head>
 <body>
-    <form method="post">
+    <form method="post" action="{{action}}">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Post စာတင်မယ်</button>
