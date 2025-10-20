@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from .constants import INDEX_URL_NAME
+from .constants import INDEX_URL_NAME, CREATE_POST_URL_NAME
 from main.models import Post
 from main.forms import PostForm
 
@@ -32,10 +32,10 @@ def create_post(request):
             return redirect(INDEX_URL_NAME)
         else:
             messages.error(request, "fail")
-            return render(request, 'create_post.html', {'form': form})
+            return render(request, CREATE_POST_URL_NAME, {'form': form})
     else:
         form = PostForm()
-        return render(request, 'create_post.html', {'form': form})
+        return render(request, CREATE_POST_URL_NAME, {'form': form})
 
 @csrf_protect
 @require_http_methods(["GET", "POST"])
@@ -63,5 +63,5 @@ def update_post(request, pk):
     else:
         form = PostForm(instance=post)  # Correct usage of ModelForm with instance
 
-    return render(request, 'create_post.html', {'form': form})
+    return render(request, CREATE_POST_URL_NAME, {'form': form})
 
