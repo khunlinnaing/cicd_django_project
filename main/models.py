@@ -1,11 +1,14 @@
 from django.db import models
+from django.utils.text import slugify
 
-class Item(models.Model):
-    name = models.CharField(max_length=100)
-    quantity = models.IntegerField(default=0)
+class Post(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    # slug = models.SlugField(unique=True, blank=True)
+
 
     def __str__(self):
-        return self.name
+        return self.title
 
-    def is_in_stock(self):
-        return self.quantity > 0
+    def get_summary(self):
+        return self.content[:50]
