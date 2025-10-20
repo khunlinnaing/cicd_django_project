@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from main.models import *
-from main.forms import *
+from main.models import Post
+from main.forms import PostForm
 
 @require_GET
 def index(request):
