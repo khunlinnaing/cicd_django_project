@@ -75,104 +75,209 @@ class GetDetailViewTest(TestCase):
         self.assertEqual(response.status_code, 405)
 
 
-class CreatePostViewTest(TestCase):
+class GetCreatePostViewTest(TestCase):
     """
-    create_post view အတွက် unit test
-    - GET request → blank form render
-    - POST valid → DB save, success message, redirect
-    - POST invalid → form errors, error message, same template render
+    get_create_post view အတွက် unit test များ။
+    - GET request မှာ HTTP 200 OK ဖြစ်ရမယ်။
+    - မှန်ကန်တဲ့ template သုံးထားဖို့။
+    - Context မှာ PostForm ပါဖို့ စမ်းသပ်။
     """
 
     def setUp(self):
-        """Test client create"""
+        """Test client ပြင်ဆင်မှု"""
         self.client = Client()
-        self.url = reverse('website:create-post')
+        self.url = reverse("website:get-create-post")  # သင့် urls.py ထဲက name နဲ့ ကိုက်ရမယ်။
 
-    def test_get_request_renders_blank_form(self):
-        """GET request → blank PostForm render"""
+    def test_get_request_status_code(self):
+        """GET request → HTTP 200 OK ဖြစ်ရမယ်။"""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'create_post.html')
-        self.assertIn('form', response.context)
-        self.assertIsInstance(response.context['form'], PostForm)
+
+    def test_get_request_uses_correct_template(self):
+        """မှန်ကန်တဲ့ template ကို အသုံးပြုထားမလား စမ်းသပ်"""
+        response = self.client.get(self.url)
+        self.assertTemplateUsed(response, "create_post.html")
+
+    def test_context_contains_form_and_action(self):
+        """Context မှာ form နဲ့ action key ၂ ခုပါရမယ်"""
+        response = self.client.get(self.url)
+        self.assertIn("form", response.context)
+        self.assertIn("action", response.context)
+        self.assertIsInstance(response.context["form"], PostForm)
+
+
+class PostCreatePostViewTest(TestCase):
+    """
+    post_create_post view အတွက် unit test များ။
+    - POST valid data → DB save + redirect + success message
+    - POST invalid data → template render + error message
+    - GET method → 405 (method not allowed)
+    """
+
+    def setUp(self):
+        """Test client ပြင်ဆင်မှု"""
+        self.client = Client()
+        self.url = reverse("website:post-create-post")
 
     def test_post_valid_data_creates_post(self):
-        """POST valid data → Post object save, redirect, success message"""
-        data = {'title': 'Test Post', 'content': 'Some test content'}
+        """POST valid data → DB save + success message + redirect"""
+        data = {
+            "title": "New Post",
+            "content": "This is a new post."
+        }
         response = self.client.post(self.url, data)
 
-        self.assertRedirects(response, reverse('website:index'))
+        # Redirect စစ်
+        from main.views import INDEX_URL_NAME
+        self.assertRedirects(response, reverse(INDEX_URL_NAME))
+
+        # DB မှာ post တစ်ခုဖြစ်သင့်
         self.assertEqual(Post.objects.count(), 1)
         post = Post.objects.first()
-        self.assertEqual(post.title, 'Test Post')
-        self.assertEqual(post.content, 'Some test content')
+        self.assertEqual(post.title, "New Post")
+
+        # Success message ပါသင့်
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("successfully" in str(m) for m in messages))
 
-    def test_post_invalid_data_shows_error(self):
-        """POST invalid data → form errors, error message, same template render"""
-        data = {'title': '', 'content': ''}
+    def test_post_invalid_data_renders_form(self):
+        """POST invalid data → Form errors + Error message + same template"""
+        data = {
+            "title": "",  # Required field blank
+            "content": ""
+        }
         response = self.client.post(self.url, data)
-
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'create_post.html')
-        form = response.context['form']
-        self.assertTrue(form.errors)
+        self.assertTemplateUsed(response, "create_post.html")
+
+        form = response.context["form"]
+        self.assertTrue(form.errors)  # Form invalid ဖြစ်ရမယ်။
+
+        # Error message ပါသင့်
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("fail" in str(m) for m in messages))
 
+    def test_get_request_not_allowed(self):
+        """GET request → 405 Method Not Allowed ဖြစ်ရမယ်။"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
 
-class UpdatePostViewTest(TestCase):
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.contrib.messages import get_messages
+from main.models import Post
+from main.forms import PostForm
+from main.views import INDEX_URL_NAME, CREATE_POST_URL_NAME, UPDATE_POST_FORM_URL_NAME
+
+
+class GetUpdatePostViewTest(TestCase):
     """
-    update_post view အတွက် unit test
-    - GET request → form instance render
-    - POST valid → DB update, redirect, success message
-    - POST invalid → form errors, error message
-    - Invalid PK → redirect + error message
+    get_update_post view အတွက် unit test များ။
+    - GET request မှာ HTTP 200 OK ဖြစ်ရမယ်။
+    - Template မှန်မမှန်စစ်ရမယ်။
+    - Context data မှာ form နှင့် action ပါ/မပါ စစ်ခြင်း။
+    - Post မရှိတဲ့အခါ redirect ဖြစ်ဖို့စစ်ခြင်း။
     """
 
     def setUp(self):
-        """Test client နှင့် test Post object create"""
+        """Test client ပြင်ဆင်ပြီး sample post တစ်ခုဖန်တီး"""
         self.client = Client()
-        self.post = Post.objects.create(title="Original Title", content="Original content")
-        self.url = reverse('website:update-post', args=[self.post.pk])
-        self.invalid_url = reverse('website:update-post', args=[9999])  # မရှိတဲ့ PK
+        self.post = Post.objects.create(title="Old Title", content="Old content")
+        self.url = reverse("website:get-update-post", args=[self.post.pk])
 
-    def test_get_request_renders_form(self):
-        """GET request → PostForm instance render"""
+    def test_get_update_post_status_code(self):
+        """GET request → HTTP 200 OK ဖြစ်ရမယ်။"""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'create_post.html')
-        self.assertIn('form', response.context)
-        self.assertIsInstance(response.context['form'], PostForm)
 
-    def test_post_valid_updates_post(self):
-        """POST valid data → Post object update, redirect, success message"""
-        data = {'title': 'Updated Title', 'content': 'Updated content'}
+    def test_get_update_post_uses_correct_template(self):
+        """မှန်ကန်တဲ့ template ကို render လုပ်ထားဖို့ စစ်ခြင်း။"""
+        response = self.client.get(self.url)
+        self.assertTemplateUsed(response, "create_post.html")
+
+    def test_context_contains_form_and_action(self):
+        """Context data ထဲမှာ form နဲ့ action key တွေပါ/မပါ စစ်ခြင်း။"""
+        response = self.client.get(self.url)
+        self.assertIn("form", response.context)
+        self.assertIn("action", response.context)
+        self.assertIsInstance(response.context["form"], PostForm)
+
+    def test_get_update_post_not_found_redirects(self):
+        """မရှိတဲ့ Post ID → redirect + error message ဖြစ်ရမယ်။"""
+        url = reverse("website:get-update-post", args=[999])  # မရှိတဲ့ ID
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse(INDEX_URL_NAME))
+
+        # message check
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(any("Id not found" in str(m) for m in messages))
+
+
+class PostUpdatePostViewTest(TestCase):
+    """
+    post_update_post view အတွက် unit test များ။
+    - POST valid data → DB update + redirect + success message
+    - POST invalid data → render same form + error message
+    - Post မရှိရင် redirect + message
+    - GET method → 405 (method not allowed)
+    """
+
+    def setUp(self):
+        """Test client ပြင်ဆင်ပြီး sample post တစ်ခုဖန်တီး"""
+        self.client = Client()
+        self.post = Post.objects.create(title="Old Title", content="Old content")
+        self.url = reverse("website:post-update-post", args=[self.post.pk])
+
+    def test_post_valid_data_updates_post(self):
+        """POST valid data → Update success + Redirect + Success message"""
+        data = {
+            "title": "Updated Title",
+            "content": "Updated content"
+        }
         response = self.client.post(self.url, data)
 
-        self.assertRedirects(response, reverse('website:index'))
+        # Redirect check
+        self.assertRedirects(response, reverse(INDEX_URL_NAME))
+
+        # Database update check
         self.post.refresh_from_db()
-        self.assertEqual(self.post.title, 'Updated Title')
-        self.assertEqual(self.post.content, 'Updated content')
+        self.assertEqual(self.post.title, "Updated Title")
+        self.assertEqual(self.post.content, "Updated content")
+
+        # Success message check
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Update successfully" in str(m) for m in messages))
 
-    def test_post_invalid_shows_error(self):
-        """POST invalid data → form errors, error message, same template render"""
-        data = {'title': '', 'content': ''}
+    def test_post_invalid_data_shows_form(self):
+        """POST invalid data → form error + error message + render same template"""
+        data = {
+            "title": "",  # required field blank
+            "content": ""
+        }
         response = self.client.post(self.url, data)
-
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'create_post.html')
-        form = response.context['form']
-        self.assertTrue(form.errors)
+        self.assertTemplateUsed(response, "create_post.html")
+
+        form = response.context["form"]
+        self.assertTrue(form.errors)  # Invalid form ဖြစ်ရမယ်။
+
+        # Error message check
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Update failed" in str(m) for m in messages))
 
-    def test_update_nonexistent_post_redirects(self):
-        """Invalid PK → redirect to index, error message"""
-        response = self.client.get(self.invalid_url)
-        self.assertRedirects(response, reverse('website:index'))
+    def test_post_not_found_redirects(self):
+        """POST မရှိတဲ့ ID → redirect + error message ဖြစ်ရမယ်။"""
+        url = reverse("website:post-update-post", args=[999])  # မရှိတဲ့ ID
+        data = {"title": "Anything", "content": "Text"}
+        response = self.client.post(url, data)
+        self.assertRedirects(response, reverse(INDEX_URL_NAME))
+
+        # message check
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Id not found" in str(m) for m in messages))
+
+    def test_get_request_not_allowed(self):
+        """GET request → 405 Method Not Allowed ဖြစ်ရမယ်။"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
+
