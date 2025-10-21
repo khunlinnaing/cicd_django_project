@@ -1,8 +1,10 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.messages import get_messages
+from main.views import INDEX_URL_NAME
 from main.forms import PostForm
 from main.models import Post
+
 
 
 class IndexViewTest(TestCase):
@@ -161,13 +163,6 @@ class PostCreatePostViewTest(TestCase):
         """GET request → 405 Method Not Allowed ဖြစ်ရမယ်။"""
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 405)
-
-from django.test import TestCase, Client
-from django.urls import reverse
-from django.contrib.messages import get_messages
-from main.models import Post
-from main.forms import PostForm
-from main.views import INDEX_URL_NAME, CREATE_POST_URL_NAME, UPDATE_POST_FORM_URL_NAME
 
 
 class GetUpdatePostViewTest(TestCase):

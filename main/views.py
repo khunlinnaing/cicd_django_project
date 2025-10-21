@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.decorators.http import require_GET, require_POST,require_http_methods
 from django.urls import reverse
 from django.contrib import messages
-from .constants import INDEX_URL_NAME, CREATE_POST_URL_NAME, CREATE_POST_FORM_URL_NAME, UPDATE_POST_FORM_URL_NAME
+from .constants import INDEX_URL_NAME, CREATE_POST_URL_NAME, CREATE_POST_FORM_URL_NAME, UPDATE_POST_FORM_URL_NAME, ID_NOT_FOUND
 from main.models import Post
 from main.forms import PostForm
 
@@ -18,7 +18,7 @@ def get_detail(request, pk):
         item = Post.objects.get(pk=pk)
         return render(request, 'detail.html', {'item': item})
     except Post.DoesNotExist:
-        messages.error(request, "Id not found")
+        messages.error(request, ID_NOT_FOUND)
         return redirect(INDEX_URL_NAME)
 
 
@@ -51,7 +51,7 @@ def get_update_post(request, pk):
             {'form': form, 'action': reverse(UPDATE_POST_FORM_URL_NAME, args=[pk])}
         )
     except Post.DoesNotExist:
-        messages.error(request, "Id not found")
+        messages.error(request, ID_NOT_FOUND)
         return redirect(INDEX_URL_NAME)
 
 
@@ -79,7 +79,7 @@ def post_update_post(request, pk):
                 {'form': form, 'action': UPDATE_POST_FORM_URL_NAME}
             )
     except Post.DoesNotExist:
-        messages.error(request, "Id not found")
+        messages.error(request, ID_NOT_FOUND)
         return redirect(INDEX_URL_NAME)
 
 
